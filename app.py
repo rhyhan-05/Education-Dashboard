@@ -8,10 +8,10 @@ st.title("Indian Education Enrollment Dashboard")
 
 df = pd.read_csv("data.csv")
 
-if len(df.columns) < 2:
-    st.error("CSV format incorrect. Please check data.csv")
-    st.stop()
+st.write("Raw Data Preview:")
+st.write(df)
 
+df = df.iloc[:, :2]
 df.columns = ["State", "Enrollment"]
 
 df["Enrollment"] = pd.to_numeric(df["Enrollment"], errors="coerce")
