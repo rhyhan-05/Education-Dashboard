@@ -1,12 +1,3 @@
-<<<<<<< HEAD
 streamlit
 pandas
 matplotlib
-seaborn
-=======
-streamlit
-pandas
-matplotlib
-seaborn
->>>>>>> 9926ed87549722345429b95f55db021652240bef
-numpy
