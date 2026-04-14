@@ -2,100 +2,65 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Education Dashboard")
+st.set_page_config(page_title="Education Dashboard", layout="wide")
 
 st.title("Indian Education Enrollment Dashboard")
 
 df = pd.read_csv("data.csv")
-df.columns = df.columns.str.strip()
-
-df.rename(columns={
-    df.columns[0]: "State",
-    df.columns[1]: "Enrollment"
-}, inplace=True)
-
+df.columns = ["State", "Enrollment"]
 df["Enrollment"] = pd.to_numeric(df["Enrollment"], errors="coerce")
 df = df.dropna()
 
-metro_states = [
-    "Maharashtra",
-    "Karnataka",
-    "Tamil Nadu",
-    "Telangana",
-    "West Bengal",
-    "Delhi"
-]
+states = df["State"].unique()
 
-df = df[df["State"].isin(metro_states)]
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-if "show_bar" not in st.session_state:
-    st.session_state.show_bar = False
+def go_home():
+    st.session_state.page = "home"
 
-if "show_pie" not in st.session_state:
-    st.session_state.show_pie = False
+def go_dashboard():
+    st.session_state.page = "dashboard"
 
-if "show_data" not in st.session_state:
-    st.session_state.show_data = False
+if st.session_state.page == "home":
+    st.subheader("Select States")
+    selected_states = st.multiselect("Choose States", states)
 
-st.sidebar.title("Controls")
+    if st.button("Show Dashboard"):
+        st.session_state.selected_states = selected_states
+        go_dashboard()
 
-selected_states = st.sidebar.multiselect(
-    "Select States",
-    metro_states
-)
+elif st.session_state.page == "dashboard":
+    st.button("⬅ Back", on_click=go_home)
 
-if st.sidebar.button("Show Bar Graph"):
-    st.session_state.show_bar = True
-    st.session_state.show_pie = False
-    st.session_state.show_data = False
+    selected_states = st.session_state.get("selected_states", states)
 
-if st.sidebar.button("Show Pie Chart"):
-    st.session_state.show_pie = True
-    st.session_state.show_bar = False
-    st.session_state.show_data = False
+    if selected_states:
+        df_filtered = df[df["State"].isin(selected_states)]
+    else:
+        df_filtered = df
 
-if st.sidebar.button("Show Data"):
-    st.session_state.show_data = True
-    st.session_state.show_bar = False
-    st.session_state.show_pie = False
+    col1, col2 = st.columns(2)
 
-if st.button("Back / Reset"):
-    st.session_state.show_bar = False
-    st.session_state.show_pie = False
-    st.session_state.show_data = False
-    selected_states = []
+    with col1:
+        st.metric("Total Enrollment", int(df_filtered["Enrollment"].sum()))
 
-if selected_states:
-    df_filtered = df[df["State"].isin(selected_states)]
-else:
-    df_filtered = df
-
-if st.session_state.show_bar:
-    st.subheader("State-wise Enrollment")
-    df_bar = df_filtered.sort_values(by="Enrollment", ascending=True)
-
-    fig, ax = plt.subplots()
-    ax.barh(df_bar["State"], df_bar["Enrollment"])
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.barh(df_filtered["State"], df_filtered["Enrollment"])
     ax.set_xlabel("Enrollment")
     ax.set_ylabel("State")
-
     st.pyplot(fig)
 
-if st.session_state.show_pie:
-    if len(selected_states) <= 1:
-        st.warning("Select at least 2 states to view Pie Chart")
-    else:
-        st.subheader("Enrollment Distribution")
-
-        fig2, ax2 = plt.subplots()
+    if len(df_filtered) > 1:
+        fig2, ax2 = plt.subplots(figsize=(6, 6))
         ax2.pie(
             df_filtered["Enrollment"],
             labels=df_filtered["State"],
             autopct="%1.1f%%"
         )
-
         st.pyplot(fig2)
+    else:
+        st.info("Pie chart requires more than one state")
 
-if st.session_state.show_data:
-    st.subheader("Dataset")
+    st.subheader("Dataset Preview")
     st.dataframe(df_filtered)
